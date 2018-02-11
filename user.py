@@ -1,7 +1,9 @@
 import machine
-from microWebSrv import MicroWebSrv
 import time
 import neopixel
+
+from microWebSrv import MicroWebSrv
+from colours import Colours
 
 led = machine.Pin(5, machine.Pin.OUT)
 led.value(0)
@@ -10,15 +12,13 @@ np = neopixel.NeoPixel(machine.Pin(13), 17)
 np.fill((0, 0, 0))
 np.write()
 
-import colours
 
-
-def _httpHandlerLightGet(httpClient, httpResponse):
+def httpHandlerLightGet(httpClient, httpResponse):
     q = httpClient.GetRequestQueryString()
     if q.startswith("command="):
         q = q[len("command="):].lower()
         print(q)
-        rgb = colours.Colours.get(q)
+        rgb = Colours.get(q)
         print(rgb)
         if rgb is not None:
             np.fill(rgb)
@@ -28,7 +28,7 @@ def _httpHandlerLightGet(httpClient, httpResponse):
 
 
 routeHandlers = [
-    ("/light",	"GET",	_httpHandlerLightGet)
+    ("/light",	"GET",	httpHandlerLightGet)
 ]
 
 srv = MicroWebSrv(routeHandlers=routeHandlers)
