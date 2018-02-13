@@ -1,28 +1,23 @@
-import machine
-import time
-import neopixel
+import utime
 
 from microWebSrv import MicroWebSrv
 from colours import Colours
+import lightcontrol
 
-led = machine.Pin(5, machine.Pin.OUT)
-led.value(0)
-
-np = neopixel.NeoPixel(machine.Pin(13), 17)
-np.fill((0, 0, 0))
-np.write()
+lightcontrol.setColourAll((0, 0, 0))
 
 
 def httpHandlerLightGet(httpClient, httpResponse):
     q = httpClient.GetRequestQueryString()
     if q.startswith("command="):
         q = q[len("command="):].lower()
-        print(q)
-        rgb = Colours.get(q)
-        print(rgb)
-        if rgb is not None:
-            np.fill(rgb)
-            np.write()
+        if q == "disco":
+            lightcontrol.goDisco()
+        else:
+            print(q)
+            rgb = Colours.get(q)
+            if rgb is not None:
+                lightcontrol.tranistionTo(rgb, 1000)
 
     httpResponse.WriteResponseOk()
 
@@ -32,4 +27,8 @@ routeHandlers = [
 ]
 
 srv = MicroWebSrv(routeHandlers=routeHandlers)
-srv.Start(threaded=False)
+srv.Start(threaded=True)
+
+while True:
+    utime.sleep_ms(10)
+    lightcontrol.doLightControl()
