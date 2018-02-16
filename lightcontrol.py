@@ -1,34 +1,8 @@
 import machine
 import neopixel
 import utime
-
-
-class CountdownTimer:
-    def __init__(self, time_ms):
-        self.reset(time_ms)
-
-    def reset(self, time_ms):
-        self.duration_ms = time_ms
-        self.start_time = utime.ticks_ms()
-        self.expired = False
-
-    def elapsedTime(self):
-        if self.expired:
-            return self.duration_ms
-        return utime.ticks_diff(utime.ticks_ms(), self.start_time)
-
-    def hasExpired(self):
-        if not self.expired:
-            self.expired = self.elapsedTime() > self.duration_ms
-        return self.expired
-
-    def getProgress(self):
-        if self.expired:
-            return 1.0
-        return float(self.elapsedTime()) / float(self.duration_ms)
-
-
-np = neopixel.NeoPixel(machine.Pin(13), 17)
+import math
+from timetools import CountdownTimer
 
 
 def lerp(a, b, control):
@@ -41,19 +15,54 @@ def lerpRGB(rgb1, rgb2, control):
             int(lerp(rgb1[2], rgb2[2], control)))
 
 
-def setColourAll(rgb):
-    np.fill(rgb)
-    np.write()
-    pass
+class LightControl:
 
+    def __init__(self, pin, count):
+        self.np = neopixel.NeoPixel(machine.Pin(pin), count)
+        self.timer = CountdownTimer(0)
+        self.begin_rgb = (0, 0, 0)
+        self.end_rgb = (0, 0, 0)
+        self.discoMode = False
+        self.phases = [0.0, 0.0, 0.0]
+        self.rates = [0.1, 0.2, 0.3]
 
-def tranistionTo(rgb, time_ms):
-    pass
+    def setColourAll(self, colour):
+        self.np.fill(colour)
+        self.np.write()
 
+    def tranistionTo(self, colour, time_ms):
+        self.discoMode = False
+        self.begin_rgb = self.end_rgb
+        self.end_rgb = colour
+        self.timer.reset(time_ms)
 
-def goDisco():
-    pass
+    def goDisco(self):
+        self.setColourAll((0, 0, 0))
+        self.discoMode = True
+        self.begin_rgb = (0, 0, 0)
+        self.end_rgb = (0, 0, 0)
 
+    def doDisco(self):
+        for p in range(0, 16):
+            r = abs(math.sin(math.pi/16 * p + self.phases[0])) * 255
+            g = abs(math.sin(math.pi/16 * p + self.phases[1])) * 255
+            b = abs(math.sin(math.pi/16 * p + self.phases[2])) * 255
 
-def doLightControl():
-    pass
+            self.phases[0] += 0.01
+            self.phases[1] += 0.001
+            self.phases[2] += 0.03
+
+            self.np[p] = (int(r), int(g), int(b))
+
+        self.np.write()
+
+    def doFade(self):
+        newrgb = lerpRGB(self.begin_rgb, self.end_rgb,
+                         self.timer.getProgress())
+        self.setColourAll(newrgb)
+
+    def doLightControl(self):
+        if self.discoMode:
+            self.doDisco()
+        else:
+            self.doFade()
