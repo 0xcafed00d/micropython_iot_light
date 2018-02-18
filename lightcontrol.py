@@ -3,6 +3,7 @@ import neopixel
 import utime
 import math
 from timetools import CountdownTimer
+import urandom
 
 
 def lerp(a, b, control):
@@ -15,6 +16,17 @@ def lerpRGB(rgb1, rgb2, control):
             int(lerp(rgb1[2], rgb2[2], control)))
 
 
+colours = [
+    (255, 0, 0),
+    (0, 255, 0),
+    (0, 0, 255),
+    (255, 255, 0),
+    (255, 0, 255),
+    (0, 255, 255),
+    (255, 255, 255)
+]
+
+
 class LightControl:
 
     def __init__(self, pin, count):
@@ -23,6 +35,7 @@ class LightControl:
         self.begin_rgb = (0, 0, 0)
         self.end_rgb = (0, 0, 0)
         self.discoMode = False
+        self.randomMode = False
         self.phases = [0.0, 0.0, 0.0]
         self.rates = [0.1, 0.2, 0.3]
 
@@ -32,6 +45,7 @@ class LightControl:
 
     def tranistionTo(self, colour, time_ms):
         self.discoMode = False
+        self.randomMode = False
         self.begin_rgb = self.end_rgb
         self.end_rgb = colour
         self.timer.reset(time_ms)
@@ -39,8 +53,17 @@ class LightControl:
     def goDisco(self):
         self.setColourAll((0, 0, 0))
         self.discoMode = True
+        self.randomMode = False
         self.begin_rgb = (0, 0, 0)
         self.end_rgb = (0, 0, 0)
+
+    def goRandom(self):
+        self.setColourAll((0, 0, 0))
+        self.discoMode = False
+        self.randomMode = True
+        self.begin_rgb = (0, 0, 0)
+        self.end_rgb = colours[urandom.randint(0, 6)]
+        self.timer.reset(1000)
 
     def doDisco(self):
         for p in range(0, 16):
@@ -61,8 +84,19 @@ class LightControl:
                          self.timer.getProgress())
         self.setColourAll(newrgb)
 
+    def doRandom(self):
+        newrgb = lerpRGB(self.begin_rgb, self.end_rgb,
+                         self.timer.getProgress())
+        self.setColourAll(newrgb)
+        if self.timer.hasExpired():
+            self.begin_rgb = self.end_rgb
+            self.end_rgb = colours[urandom.randint(0, 6)]
+            self.timer.reset(500)
+
     def doLightControl(self):
         if self.discoMode:
             self.doDisco()
+        elif self.randomMode:
+            self.doRandom()
         else:
             self.doFade()

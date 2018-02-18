@@ -15,6 +15,8 @@ def httpHandlerLightGet(httpClient, httpResponse):
         q = q[len("command="):].lower()
         if q == "disco":
             lc.goDisco()
+        elif q == "random":
+            lc.goRandom()
         else:
             print(q)
             rgb = Colours.get(q)
