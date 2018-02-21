@@ -8,20 +8,25 @@ import lightcontrol
 lc = lightcontrol.LightControl(13, 17)
 lc.setColourAll((0, 0, 0))
 
+sync = _thread.allocate_lock()
+
 
 def httpHandlerLightGet(httpClient, httpResponse):
     q = httpClient.GetRequestQueryString()
     if q.startswith("command="):
         q = q[len("command="):].lower()
+        print(q)
         if q == "disco":
-            lc.goDisco()
+            with sync:
+                lc.goDisco()
         elif q == "random":
-            lc.goRandom()
+            with sync:
+                lc.goRandom()
         else:
-            print(q)
             rgb = Colours.get(q)
             if rgb is not None:
-                lc.tranistionTo(rgb, 1000)
+                with sync:
+                    lc.tranistionTo(rgb, 1000)
 
     httpResponse.WriteResponseOk()
 
@@ -33,7 +38,15 @@ routeHandlers = [
 srv = MicroWebSrv(routeHandlers=routeHandlers)
 srv.Start(threaded=True)
 
+
+def lightControlThread():
+    while True:
+        utime.sleep_ms(50)
+        with sync:
+            lc.doLightControl()
+
+
+_thread.start_new_thread(lightControlThread, ())
+
 while True:
-    utime.sleep_ms(10)
-    lc.doLightControl()
-    print(".", end='')
+    utime.sleep(10)

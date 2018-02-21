@@ -55,7 +55,7 @@ class LightControl:
         self.doFunc = self.doRandom
         self.begin_rgb = (0, 0, 0)
         self.end_rgb = colours[urandom.randint(0, 6)]
-        self.timer.reset(1000)
+        self.timer.reset(5000)
 
     def doDisco(self):
         pass
@@ -74,7 +74,7 @@ class LightControl:
         if self.timer.hasExpired():
             self.begin_rgb = self.end_rgb
             self.end_rgb = colours[urandom.randint(0, 6)]
-            self.timer.reset(500)
+            self.timer.reset(5000)
 
     def doLightControl(self):
         if self.doFunc is not None:
