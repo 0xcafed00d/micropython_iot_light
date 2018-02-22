@@ -30,7 +30,7 @@ colours = [
 class LightControl:
 
     def __init__(self, pin, count):
-        self.np = neopixel.NeoPixel(machine.Pin(pin), count)
+        self.np = neopixel.NeoPixel(machine.Pin(pin), count, timing=True)
         self.timer = CountdownTimer(0)
         self.begin_rgb = (0, 0, 0)
         self.end_rgb = (0, 0, 0)
@@ -48,8 +48,9 @@ class LightControl:
 
     def goDisco(self):
         self.doFunc = self.doDisco
-        self.begin_rgb = (0, 0, 0)
+        self.begin_rgb = colours[urandom.randint(0, 6)]
         self.end_rgb = (0, 0, 0)
+        self.timer.reset(750)
 
     def goRandom(self):
         self.doFunc = self.doRandom
@@ -58,7 +59,14 @@ class LightControl:
         self.timer.reset(5000)
 
     def doDisco(self):
-        pass
+        newrgb = lerpRGB(self.begin_rgb, self.end_rgb,
+                         self.timer.getProgress())
+        self.setColourAll(newrgb)
+
+        if self.timer.hasExpired():
+            self.begin_rgb = colours[urandom.randint(0, 6)]
+            self.end_rgb = (0, 0, 0)
+            self.timer.reset(750)
 
     def doFade(self):
         newrgb = lerpRGB(self.begin_rgb, self.end_rgb,

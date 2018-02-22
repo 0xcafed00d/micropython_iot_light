@@ -5,7 +5,7 @@ from microWebSrv import MicroWebSrv
 from colours import Colours
 import lightcontrol
 
-lc = lightcontrol.LightControl(13, 17)
+lc = lightcontrol.LightControl(13, 16)
 lc.setColourAll((0, 0, 0))
 
 sync = _thread.allocate_lock()
