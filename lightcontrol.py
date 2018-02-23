@@ -47,7 +47,7 @@ class LightControl:
         self.timer.reset(time_ms)
 
     def goDisco(self):
-        self.doFunc = self.doDisco
+        self.doFunc = self.doDisco2
         self.begin_rgb = colours[urandom.randint(0, 6)]
         self.end_rgb = (0, 0, 0)
         self.timer.reset(750)
@@ -66,6 +66,19 @@ class LightControl:
         if self.timer.hasExpired():
             self.begin_rgb = colours[urandom.randint(0, 6)]
             self.end_rgb = (0, 0, 0)
+            self.timer.reset(750)
+
+    def doDisco2(self):
+        for n in range(0, 16):
+            if self.timer.getProgress() * 15 >= n:
+                self.np[n] = self.begin_rgb
+            else:
+                self.np[n] = self.end_rgb
+        self.np.write()
+
+        if self.timer.hasExpired():
+            self.end_rgb = self.begin_rgb
+            self.begin_rgb = colours[urandom.randint(0, 6)]
             self.timer.reset(750)
 
     def doFade(self):
