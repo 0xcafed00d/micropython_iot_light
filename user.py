@@ -1,52 +1,35 @@
 import utime
-import _thread
 
-from microWebSrv import MicroWebSrv
+import nbwebserver
 from colours import Colours
 import lightcontrol
 
 lc = lightcontrol.LightControl(13, 16)
 lc.setColourAll((0, 0, 0))
 
-sync = _thread.allocate_lock()
 
-
-def httpHandlerLightGet(httpClient, httpResponse):
-    q = httpClient.GetRequestQueryString()
-    if q.startswith("command="):
-        q = q[len("command="):].lower()
-        print(q)
-        if q == "disco":
-            with sync:
-                lc.goDisco()
-        elif q == "random":
-            with sync:
-                lc.goRandom()
+def lightHandler(request, response):
+    command = request.query.get("command")
+    if command is not None:
+        print(command)
+        if command == "disco":
+            lc.goDisco()
+        elif command == "random":
+            lc.goRandom()
         else:
-            rgb = Colours.get(q)
+            rgb = Colours.get(command)
             if rgb is not None:
-                with sync:
-                    lc.tranistionTo(rgb, 1000)
+                lc.tranistionTo(rgb, 1000)
 
-    httpResponse.WriteResponseOk()
-
-
-routeHandlers = [
-    ("/light",	"GET",	httpHandlerLightGet)
-]
-
-srv = MicroWebSrv(routeHandlers=routeHandlers)
-srv.Start(threaded=True)
+    response.sendOK()
 
 
-def lightControlThread():
-    while True:
-        utime.sleep_ms(50)
-        with sync:
-            lc.doLightControl()
+srv = nbwebserver.WebServer()
+srv.AddHandler("/light", lightHandler)
+srv.Start()
 
-
-_thread.start_new_thread(lightControlThread, ())
 
 while True:
-    utime.sleep(10)
+    utime.sleep_ms(10)
+    srv.Update()
+    lc.doLightControl()
